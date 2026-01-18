@@ -1,0 +1,42 @@
+
+name: OWASP ZAP Integration with GitHub Actions
+
+on:
+  push:
+    branches:
+      - master  # change to 'main' if your default branch is main
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Target URL to scan"
+        required: true
+        default: "http://testphp.vulnweb.com/"
+      rules_file_name:
+        description: "Path to rules.tsv (optional)"
+        required: false
+        default: ".zap/rules.tsv"
+      aggressive:
+        description: "Add '-a' to aggressively spider"
+        required: false
+        default: "true" 
+
+permissions:
+  contents: read
+  issues: write  
+
+jobs:
+  zap_scan:
+    name: Scan the web application
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: ${{ github.event.inputs.target || 'http://testphp.vulnweb.com/' }}
+          rules_file_name: ${{ github.event.inputs.rules_file_name || '.zap/rules.tsv' }}
+          cmd_options: ${{ github.event.inputs.aggressive == 'true' && '-a' || '' }}
