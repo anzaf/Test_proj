@@ -4,7 +4,7 @@ name: OWASP ZAP Integration with GitHub Actions
 on:
   push:
     branches:
-      - master  # change to 'main' if your default branch is main
+      - main 
   workflow_dispatch:
     inputs:
       target:
