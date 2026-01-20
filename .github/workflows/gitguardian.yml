@@ -1,0 +1,26 @@
+
+name: GitGuardian Secret Scan
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ggshield-scan:
+    name: GitGuardian ggshield secret scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout full
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # enables broader range scans if desired
+
+      - name: Run ggshield secret scan
+        uses: GitGuardian/ggshield/actions/secret@v1
+        env:
+          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_TOKEN }}
