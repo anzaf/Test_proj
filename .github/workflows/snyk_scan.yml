@@ -15,7 +15,7 @@ jobs:
       
       - name: Snyk Maven monitor (upload to Snyk UI)
         if: always()  # ensures it runs even if the test step fails
-        uses: snyk/actions/maven@v4
+        uses: snyk/actions/maven@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
