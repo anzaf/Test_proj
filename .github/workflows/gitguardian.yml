@@ -15,15 +15,54 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout full
+      - name: Checkout (full history recommended)
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # enables broader range scans if desired
+          fetch-depth: 0
 
-      - name: Run ggshield secret scan
+      # === CI gate: fail the job if any secrets are found ===
+      - name: GitGuardian scan (CI gate)
         uses: GitGuardian/ggshield/actions/secret@v1.46.0
         env:
           GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_TOKEN }}
+          GITHUB_PUSH_BEFORE_SHA: ${{ github.event.before }}
+          GITHUB_PUSH_BASE_SHA: ${{ github.event.base }}
+          GITHUB_PULL_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+
+      # === Report generation (runs regardless of gate result) ===
+      - name: Set up Python
+        if: always()
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ggshield
+        if: always()
+        run: pip install --no-cache-dir ggshield
+
+      # Push: scan the pushed range -> JSON
+      - name: Create JSON report (push range)
+        if: always() && github.event_name == 'push'
+        env:
+          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_TOKEN }}
+        run: |
+          ggshield secret scan commit-range \
+            ${{ github.event.before }}..${{ github.sha }} \
+            --show-secrets false \
+            --json --exit-zero > ggshield-report.json || true
+
+      # PR: scan the PR diff -> JSON
+      - name: Create JSON report (PR diff)
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_TOKEN }}
+        run: |
+          ggshield secret scan diff \
+            --show-secrets false \
+            --json --exit-zero > ggshield-report.json || true
+
+      # Manual run: scan the repo snapshot -> JSON
       - name: Create JSON report (repo snapshot)
         if: always() && github.event_name == 'workflow_dispatch'
         env:
@@ -32,12 +71,19 @@ jobs:
           ggshield secret scan repo . \
             --recursive \
             --show-secrets false \
-            --json > ggshield-report.json || true
+            --json --exit-zero > ggshield-report.json || true
+
+      # Safety net: if for any reason no file exists, create an empty JSON
+      - name: Ensure report exists
+        if: always()
+        run: |
+          test -f ggshield-report.json || echo '{}' > ggshield-report.json
+
       - name: Upload GitGuardian JSON report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gitguardian-ggshield-report
           path: ggshield-report.json
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
