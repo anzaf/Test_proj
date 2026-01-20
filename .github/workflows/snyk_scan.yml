@@ -11,4 +11,14 @@ jobs:
         uses: snyk/actions/maven@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          run: snyk monitor --all-projects --severity-threshold=high
+          run: snyk test --all-projects --severity-threshold=high
+      
+      - name: Snyk Maven monitor (upload to Snyk UI)
+        if: always()  # ensures it runs even if the test step fails
+        uses: snyk/actions/maven@v4
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: monitor
+          args: "" 
+
