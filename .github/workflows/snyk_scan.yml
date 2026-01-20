@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: snyk/actions/setup@v4
+      - uses: snyk/actions/maven@master
       - name: Snyk test (SCA)
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKENS }}
