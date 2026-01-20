@@ -21,6 +21,6 @@ jobs:
           fetch-depth: 0  # enables broader range scans if desired
 
       - name: Run ggshield secret scan
-        uses: GitGuardian/ggshield/actions/secret@master
+        uses: GitGuardian/ggshield/actions/secret@1.46.0
         env:
           GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_TOKEN }}
