@@ -24,3 +24,20 @@ jobs:
         uses: GitGuardian/ggshield/actions/secret@v1.46.0
         env:
           GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_TOKEN }}
+      - name: Create JSON report (repo snapshot)
+        if: always() && github.event_name == 'workflow_dispatch'
+        env:
+          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_TOKEN }}
+        run: |
+          ggshield secret scan repo . \
+            --recursive \
+            --show-secrets false \
+            --json > ggshield-report.json || true
+      - name: Upload GitGuardian JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitguardian-ggshield-report
+          path: ggshield-report.json
+          if-no-files-found: warn
+          retention-days: 14
