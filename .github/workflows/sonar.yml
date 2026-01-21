@@ -14,7 +14,6 @@ on:
 jobs:
   sonar-maven:
     name: Build & Sonar (Maven)
-    if: ${{ hashFiles('**/pom.xml') != '' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -61,7 +60,6 @@ jobs:
   # ───────────────────────────────────────────────────────────
   sonar-gradle:
     name: Build & Sonar (Gradle)
-    if: ${{ hashFiles('**/build.gradle', '**/build.gradle.kts') != '' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
