@@ -2,9 +2,9 @@ name: Semgrep
 
 on:
   pull_request:
-  workflow_dispatch: 
   push:
-    branches: [main, master]
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   semgrep:
@@ -12,20 +12,29 @@ jobs:
     permissions:
       contents: read
       security-events: write
-      pull-requests: write
+
+    container:
+      image: returntocorp/semgrep:latest
+
+    env:
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+      # Optional: speed + hygiene
+      SEMGREP_SKIP: "node_modules .git vendor .venv venv build dist coverage .pytest_cache"
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: returntocorp/semgrep-action@v1
-        with:
-          config: p/default
-          generateSarif: "1"
-        env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+      # Authenticated 'ci' uploads results to Semgrep UI (AppSec Platform)
+      - name: Semgrep (upload to Semgrep UI)
+        run: |
+          semgrep ci \
+            --sarif --sarif-output=semgrep.sarif
 
-      - uses: github/codeql-action/upload-sarif@v3
+      # Also show findings in GitHub Security → Code scanning
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: semgrep.sarif
